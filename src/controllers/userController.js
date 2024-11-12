@@ -143,24 +143,19 @@ const loginUser = async (req, res) => {
         //     photo_face: req.file.buffer,
         //     photo_ktm: fs.createReadStream(photoPath)
         // });
-
         // if (photoValidationResponse.data.message !== "Identity validated successfully") {
         //     return res.status(400).json({ message: 'Photo validation failed.' });
         // }
 
-        // Hardcoded mock wallet validation response
-        const mockTransaction = {
-            message: "New Wallet validated successfully",
-            transaction: {
-                from: "049245c3867215b8f4277c15a9bffee568dc4f5cb2c393f4b1263780aa5a4df0640c036dd69a1c93e5c189a28cbc6781aa6b87dc25be27e5bea0f1bcf25be7efcb",
-                to: "554bd169c8cd034e7dd68c84f2955d98373e808ccc0ae6558da47923a2fd4015",
-                amount: 1,
-                signature: "3046022100e14b53c9cca02edb47d79b47ff92160ce7fca970b24d40bd7eec5930d3f5cadb022100a7399b9dc71a96979905d4893cc1f9d45099835c7c7cb712e517c8d4f9741548"
-            }
-        };
+        // Wallet validation
+        const walletValidationResponse = await axios.post('http://localhost:5000/validateWallet', {
+            transaction: req.body.transaction
+        });
+
+        const transaction = walletValidationResponse.data.transaction;
 
         // Check if the "to" address matches the user's public_key
-        if (mockTransaction.transaction.to !== user.public_key) {
+        if (transaction.to !== user.public_key) {
             return res.status(400).json({ message: 'Wallet validation failed. Address mismatch.' });
         }
 
