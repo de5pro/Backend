@@ -3,10 +3,10 @@ const { loginAndGenerateToken, verifyAndVote, verifyToken } = require('../contro
 
 const router = express.Router();
 
-// Route to login and generate JWT
-router.post('/verify', loginAndGenerateToken);
+// // Route to login and generate JWT
+// router.post('/verify', loginAndGenerateToken);
 
 // Route to verify token and cast vote
-router.post('/vote', verifyToken, verifyAndVote);
+router.post('/', verifyToken, verifyAndVote);
 
 module.exports = router;

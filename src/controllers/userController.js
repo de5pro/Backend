@@ -5,8 +5,13 @@ const multer = require('multer');
 const path = require('path');
 const axios = require('axios');
 const fs = require('fs');
+const jwt = require('jsonwebtoken');
 
 const BASE_PATH = path.join(__dirname, '../../');
+
+const BASE_URL = process.env.BLOCKCHAIN_BASE_URL;
+
+const SECRET_KEY = process.env.SECRET_KEY;
 
 // Set up storage for multer
 const storage = multer.diskStorage({
@@ -61,15 +66,13 @@ const registerUser = async (req, res) => {
             return res.status(500).json({ message: 'Error encrypting password.' });
         }
 
-        // Generate public and private keys
-        let publicKey, privateKey;
-        try {
-            ({ publicKey, privateKey } = generateWalletKeys());
-        } catch (keyError) {
-            console.error("Error generating wallet keys:", keyError);
-            return res.status(500).json({ message: 'Error generating wallet keys.' });
-        }
-        console.log(`Keys generated successfully for npm: ${npm}`);
+
+        const result = await axios.post(BASE_URL + "generateNewWallet", {
+            npm: npm,
+            password: password, 
+        });
+
+        const {publicKey, privateKey} = result.data;
 
         const photoPath = path.join('uploads', req.file.filename); // Relative path from `src`
 
@@ -148,8 +151,10 @@ const loginUser = async (req, res) => {
         // }
 
         // Wallet validation
-        const walletValidationResponse = await axios.post('http://localhost:5000/validateWallet', {
-            transaction: req.body.transaction
+        const walletValidationResponse = await axios.post(BASE_URL + 'validateNewWallet', {
+            npm: npm,
+            password: user.password,
+            publicKey: user.public_key,
         });
 
         const transaction = walletValidationResponse.data.transaction;
@@ -170,8 +175,11 @@ const loginUser = async (req, res) => {
 
         // Send the response with the success message and amount
         res.json({
-            message: mockTransaction.message,
-            amount: mockTransaction.transaction.amount
+            message: walletValidationResponse.data.message,
+            token: jwt.sign({
+                public_key: user.public_key,
+                private_key: private_key,
+            }, SECRET_KEY),
         });
 
     } catch (error) {
